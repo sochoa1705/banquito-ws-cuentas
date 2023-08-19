@@ -82,11 +82,11 @@ public class Account {
     @Column(name = "LAST_INTEREST_CALCULATION_DATE")
     private Date lastInterestCalculationDate;
 
-    @Column(name = "ALLOW_OVERDRAFT", nullable = false)
-    private Boolean allowOverdraft;
+    @Column(name = "ALLOW_TRANSACTIONS", nullable = false)
+    private Boolean allowTransactions;
 
-    @Column(name = "MAX_OVERDRAFT", nullable = false, precision = 2)
-    private Float maxOverdraft;
+    @Column(name = "MAX_AMOUNT_TRANSACTIONS", nullable = false, precision = 2)
+    private Float maxAmountTransactions;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CLOSED_DATE")

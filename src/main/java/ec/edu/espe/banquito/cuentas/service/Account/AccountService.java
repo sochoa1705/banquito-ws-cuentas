@@ -1,6 +1,7 @@
 package ec.edu.espe.banquito.cuentas.service.Account;
 
 import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountRQ;
+import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountRS;
 import ec.edu.espe.banquito.cuentas.model.Account;
 import ec.edu.espe.banquito.cuentas.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -16,23 +18,26 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
 
-    public Boolean verifyIfExistsAccount(String accountHolderCode) {
-        Account account = accountRepository.findByAccountHolderCode(accountHolderCode);
-        Boolean exists;
+    // public AccountRS getAccount(String codeInternalAccount) {
+    //     Account existsAccount = accountRepository.findByCodeInternalAccount(codeInternalAccount);
 
-        exists = account != null ? true : false;
-        
-        return exists;
-    }
+    //     if (existsAccount == null) {
+    //         throw new RuntimeException("No existe la cuenta");
+    //     }
+
+    //     return this.transformToAccountRS(existsAccount);
+    // }
 
     public void create(AccountRQ accountRQ) {
         // Transform AccountRQ to Account
         Account newAccount = this.transformOfAccountRQ(accountRQ);
 
-        Account existsAccount = accountRepository.findByAccountHolderCode(newAccount.getAccountHolderCode());
+        Account existsAccount = accountRepository.findByAccountHolderCodeAndProductAccountId(
+                newAccount.getAccountHolderCode(),
+                newAccount.getProductAccountId());
 
         if (existsAccount != null) {
-            throw new RuntimeException("El usuario/compania ya tiene cuenta");
+            throw new RuntimeException("El usuario/compania ya tiene una cuenta de este tipo");
         } else {
             accountRepository.save(newAccount);
         }
@@ -40,12 +45,10 @@ public class AccountService {
 
     private Account transformOfAccountRQ(AccountRQ accountRQ) {
         Account account = Account.builder()
+                .productAccountId(accountRQ.getProductAccountId())
                 .branchId(accountRQ.getBranchId())
                 .uniqueKey(UUID.randomUUID().toString())
-                .codeInternalAccount(generateAccountInternalCode(
-                        accountRQ.getAccountHolderType(),
-                        accountRQ.getAccountHolderCode(),
-                        accountRQ.getBranchId()))
+                .codeInternalAccount(generateNextAccountCode())
                 .codeInternationalAccount("FALTA")
                 .accountHolderType(accountRQ.getAccountHolderType())
                 .accountHolderCode(accountRQ.getAccountHolderCode())
@@ -56,19 +59,24 @@ public class AccountService {
                 .state("ACT")
                 .creationDate(new Date())
                 .activationDate(new Date())
-                .allowOverdraft(accountRQ.getAllowOverdraft())
-                .maxOverdraft(0.0f)
+                .allowTransactions(true)
+                .maxAmountTransactions(300.0f)
                 .interestRate(5.0f) // Default of Bco Pichincha
                 .build();
 
         return account;
     }
 
-    private String generateAccountInternalCode(String holderType, String uuid, String branchId) {
-        String holderTypePrefix = holderType.substring(0, Math.min(holderType.length(), 3));
-        String uuidPrefix = uuid.substring(0, Math.min(uuid.length(), 3));
-        String branchIdPrefix = branchId.substring(0, Math.min(branchId.length(), 2));
-
-        return holderTypePrefix + uuidPrefix + branchIdPrefix;
+    private String generateNextAccountCode() {
+        Account lastAccount = accountRepository.findTopByOrderByCodeInternalAccountDesc();
+        if (lastAccount != null) {
+            String lastCodeInternalAccount = lastAccount.getCodeInternalAccount();
+            // Assuming accountCode is numeric and needs to be incremented
+            int nextAccountCode = Integer.parseInt(lastCodeInternalAccount) + 1;
+            return String.valueOf("00"+nextAccountCode);
+        } else {
+            // If no accounts exist, start with a default value
+            return "00137979";
+        }
     }
 }

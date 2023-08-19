@@ -6,5 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AccountRepository extends JpaRepository<Account, Integer> {
 
-    Account findByAccountHolderCode(String uuid);
+    Account findByCodeInternalAccount(String codeInternalAccount);
+    
+    Account findByAccountHolderCodeAndProductAccountId(String accountHolderCode, String productAccountId);
+
+    Account findTopByOrderByCodeInternalAccountDesc();
+
 }
