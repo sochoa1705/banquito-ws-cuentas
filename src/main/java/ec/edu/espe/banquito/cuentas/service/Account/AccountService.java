@@ -1,15 +1,17 @@
 package ec.edu.espe.banquito.cuentas.service.Account;
 
+import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountInformationRS;
 import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountRQ;
-import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountRS;
+import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountUpdateRQ;
+import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountUpdateRS;
 import ec.edu.espe.banquito.cuentas.model.Account;
 import ec.edu.espe.banquito.cuentas.repository.AccountRepository;
+import ec.edu.espe.banquito.cuentas.service.ExternalRest.ClientRestService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -17,16 +19,17 @@ import java.util.UUID;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final ClientRestService clientRestService;
 
-    // public AccountRS getAccount(String codeInternalAccount) {
-    //     Account existsAccount = accountRepository.findByCodeInternalAccount(codeInternalAccount);
+    public AccountInformationRS getAccountInformation(String codeInternalAccount) {
+        Account existsAccount = accountRepository.findByCodeInternalAccount(codeInternalAccount);
 
-    //     if (existsAccount == null) {
-    //         throw new RuntimeException("No existe la cuenta");
-    //     }
+        if (existsAccount == null) {
+            throw new RuntimeException("No existe la cuenta");
+        }
 
-    //     return this.transformToAccountRS(existsAccount);
-    // }
+        return this.transformToAccountInformationRS(existsAccount);
+    }
 
     public void create(AccountRQ accountRQ) {
         // Transform AccountRQ to Account
@@ -41,6 +44,35 @@ public class AccountService {
         } else {
             accountRepository.save(newAccount);
         }
+    }
+
+    public AccountUpdateRS update(AccountUpdateRQ accountUpdateRQ) {
+        Account account = accountRepository.findByCodeInternalAccount(accountUpdateRQ.getCodeInternalAccount());
+
+        if (account == null) {
+            throw new RuntimeException("La cuenta no existe");
+        }
+
+        switch (account.getState()) {
+            case "ACT":
+                break;
+            case "SUS":
+            case "BLO":
+            case "INA":
+                account.setBlockedBalance(account.getAvailableBalance());
+                account.setState(account.getState());
+                account.setClosedDate(new Date());
+                break;
+            default:
+                throw new RuntimeException("Estado no válido: " + account.getState());
+        }
+        account.setName(accountUpdateRQ.getAccountAlias());
+        account.setAllowTransactions(account.getAllowTransactions());
+        account.setMaxAmountTransactions(account.getMaxAmountTransactions());
+        account.setLastModifiedDate(new Date());
+        accountRepository.save(account);
+
+        return this.transformToAccountUpdateRS(account);
     }
 
     private Account transformOfAccountRQ(AccountRQ accountRQ) {
@@ -67,13 +99,49 @@ public class AccountService {
         return account;
     }
 
+    private AccountInformationRS transformToAccountInformationRS(Account account) {
+        AccountInformationRS accountInformationRS = AccountInformationRS.builder()
+                .productAccount(null) ///////
+                .codeInternalAccount(account.getCodeInternalAccount())
+                .codeInternationalAccount(account.getCodeInternationalAccount())
+                .accountHolderType(account.getAccountHolderType())
+                .clientAccount(clientRestService.sendObtainInformationClientRequest(
+                    account.getAccountHolderType(), 
+                    account.getAccountHolderCode()))
+                .accountAlias(account.getName())
+                .totalBalance(account.getTotalBalance())
+                .availableBalance(account.getAvailableBalance())
+                .blockedBalance(account.getBlockedBalance())
+                .state(account.getState())
+                .allowTransactions(account.getAllowTransactions())
+                .maxAmountTransactions(account.getMaxAmountTransactions())
+                .interestRate(account.getInterestRate())
+                .build();
+
+        return accountInformationRS;
+    }
+
+    private AccountUpdateRS transformToAccountUpdateRS(Account account) {
+        AccountUpdateRS accountUpdateRS = AccountUpdateRS.builder()
+                .codeInternalAccount(account.getCodeInternalAccount())
+                .accountAlias(account.getName())
+                .state(account.getState())
+                .allowTransactions(account.getAllowTransactions())
+                .maxAmountTransactions(account.getMaxAmountTransactions())
+                .lastModifiedDate(account.getLastModifiedDate())
+                .closedDate(account.getClosedDate())
+                .build();
+
+        return accountUpdateRS;
+    }
+
     private String generateNextAccountCode() {
         Account lastAccount = accountRepository.findTopByOrderByCodeInternalAccountDesc();
         if (lastAccount != null) {
             String lastCodeInternalAccount = lastAccount.getCodeInternalAccount();
             // Assuming accountCode is numeric and needs to be incremented
             int nextAccountCode = Integer.parseInt(lastCodeInternalAccount) + 1;
-            return String.valueOf("00"+nextAccountCode);
+            return String.valueOf("00" + nextAccountCode);
         } else {
             // If no accounts exist, start with a default value
             return "00137979";

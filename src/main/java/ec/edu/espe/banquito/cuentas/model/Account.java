@@ -90,7 +90,7 @@ public class Account {
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CLOSED_DATE")
-    private Date closeDae;
+    private Date closedDate;
 
     @Column(name = "INTEREST_RATE", nullable = false, precision = 2)
     private Float interestRate;
