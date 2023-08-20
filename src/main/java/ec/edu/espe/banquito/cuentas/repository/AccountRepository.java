@@ -1,8 +1,8 @@
 package ec.edu.espe.banquito.cuentas.repository;
 
-import ec.edu.espe.banquito.cuentas.model.Account;
-
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import ec.edu.espe.banquito.cuentas.model.Account.Account;
 
 public interface AccountRepository extends JpaRepository<Account, Integer> {
 

@@ -4,9 +4,12 @@ import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountInformationRS;
 import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountRQ;
 import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountUpdateRQ;
 import ec.edu.espe.banquito.cuentas.controller.DTO.Account.AccountUpdateRS;
-import ec.edu.espe.banquito.cuentas.model.Account;
+import ec.edu.espe.banquito.cuentas.controller.DTO.ExternalRestModel.CodeSwiftRS;
+import ec.edu.espe.banquito.cuentas.model.Account.Account;
 import ec.edu.espe.banquito.cuentas.repository.AccountRepository;
-import ec.edu.espe.banquito.cuentas.service.ExternalRest.ClientRestService;
+import ec.edu.espe.banquito.cuentas.service.ExternalRestServices.BranchRestService;
+import ec.edu.espe.banquito.cuentas.service.ExternalRestServices.ClientRestService;
+import ec.edu.espe.banquito.cuentas.service.ExternalRestServices.ProductRestService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
@@ -20,6 +23,8 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final ClientRestService clientRestService;
+    private final ProductRestService productRestService;
+    private final BranchRestService branchRestService;
 
     public AccountInformationRS getAccountInformation(String codeInternalAccount) {
         Account existsAccount = accountRepository.findByCodeInternalAccount(codeInternalAccount);
@@ -33,7 +38,7 @@ public class AccountService {
 
     public void create(AccountRQ accountRQ) {
         // Transform AccountRQ to Account
-        Account newAccount = this.transformOfAccountRQ(accountRQ);
+        Account newAccount = transformOfAccountRQ(accountRQ);
 
         Account existsAccount = accountRepository.findByAccountHolderCodeAndProductAccountId(
                 newAccount.getAccountHolderCode(),
@@ -72,7 +77,7 @@ public class AccountService {
         account.setLastModifiedDate(new Date());
         accountRepository.save(account);
 
-        return this.transformToAccountUpdateRS(account);
+        return transformToAccountUpdateRS(account);
     }
 
     private Account transformOfAccountRQ(AccountRQ accountRQ) {
@@ -81,7 +86,7 @@ public class AccountService {
                 .branchId(accountRQ.getBranchId())
                 .uniqueKey(UUID.randomUUID().toString())
                 .codeInternalAccount(generateNextAccountCode())
-                .codeInternationalAccount("FALTA")
+                .codeInternationalAccount(generateSwiftCode(accountRQ.getBranchId()))
                 .accountHolderType(accountRQ.getAccountHolderType())
                 .accountHolderCode(accountRQ.getAccountHolderCode())
                 .name(accountRQ.getAccountAlias())
@@ -101,13 +106,14 @@ public class AccountService {
 
     private AccountInformationRS transformToAccountInformationRS(Account account) {
         AccountInformationRS accountInformationRS = AccountInformationRS.builder()
-                .productAccount(null) ///////
+                .productAccount(productRestService.sendObtainNameProductRequest(
+                        account.getProductAccountId()))
                 .codeInternalAccount(account.getCodeInternalAccount())
                 .codeInternationalAccount(account.getCodeInternationalAccount())
                 .accountHolderType(account.getAccountHolderType())
                 .clientAccount(clientRestService.sendObtainInformationClientRequest(
-                    account.getAccountHolderType(), 
-                    account.getAccountHolderCode()))
+                        account.getAccountHolderType(),
+                        account.getAccountHolderCode()))
                 .accountAlias(account.getName())
                 .totalBalance(account.getTotalBalance())
                 .availableBalance(account.getAvailableBalance())
@@ -147,4 +153,17 @@ public class AccountService {
             return "00137979";
         }
     }
+
+    private String generateSwiftCode(String branchUniqueKey) {
+        CodeSwiftRS codes = branchRestService.sendObtainCodesOfCountryAndBranchRequest(branchUniqueKey);
+
+        String swiftCode = "BQUI" + codes.getCountryCode() + "CH" + codes.getBranchCode();
+
+        if (swiftCode.length() < 8 || swiftCode.length() > 11) {
+            throw new IllegalArgumentException("Codigo swift invalido");
+        }
+
+        return swiftCode;
+    }
+
 }

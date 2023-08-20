@@ -1,4 +1,4 @@
-package ec.edu.espe.banquito.cuentas.model;
+package ec.edu.espe.banquito.cuentas.model.Account;
 
 import java.util.Date;
 import java.util.List;

@@ -1,4 +1,4 @@
-package ec.edu.espe.banquito.cuentas.service.ExternalRest;
+package ec.edu.espe.banquito.cuentas.service.ExternalRestServices;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package ec.edu.espe.banquito.cuentas.model;
+package ec.edu.espe.banquito.cuentas.model.Account;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

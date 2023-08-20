@@ -7,7 +7,7 @@ import lombok.Data;
 @Builder
 public class AccountInformationRS {
 
-    private Object productAccount;
+    private String productAccount;
     private String codeInternalAccount;
     private String codeInternationalAccount;
     private String accountHolderType;
