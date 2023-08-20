@@ -8,11 +8,11 @@
         <version>3.1.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>ec.edu.espe</groupId>
-    <artifactId>banquito</artifactId>
+    <groupId>ec.edu.espe.arquitectura</groupId>
+    <artifactId>ws-cuentas</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>banquito</name>
-    <description>banquito</description>
+    <name>ws-cuentas</name>
+    <description>ws-cuentas</description>
     <properties>
         <java.version>17</java.version>
     </properties>
