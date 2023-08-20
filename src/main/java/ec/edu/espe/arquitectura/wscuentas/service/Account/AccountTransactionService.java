@@ -2,12 +2,15 @@ package ec.edu.espe.arquitectura.wscuentas.service.Account;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountTransactionRQ;
+import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountTransactionRS;
 import ec.edu.espe.arquitectura.wscuentas.model.Account.Account;
 import ec.edu.espe.arquitectura.wscuentas.model.Account.AccountTransaction;
 import ec.edu.espe.arquitectura.wscuentas.repository.AccountRepository;
@@ -29,6 +32,7 @@ public class AccountTransactionService {
         Boolean fixedBalance = false;
         String creditorAccountInternationalCode = null;
         String debtorAccountInternationalCode = null;
+        Float totalDebtorTransactions = 0.0f;
 
         if (accountTransactionRQ.getCreditorAccount() != null) {
             creditorAccount = accountRepository.findByCodeInternalAccount(accountTransactionRQ.getCreditorAccount());
@@ -50,6 +54,16 @@ public class AccountTransactionService {
             if (!debtorAccount.getState().equals("ACT")) {
                 throw new RuntimeException("La cuenta del debtor no esta disponible");
             }
+
+            List<AccountTransaction> debtorTransactions = accountTransactionRepository
+                    .findByAccountIdAndTransactionTypeAndDebtorAccount(
+                            debtorAccount.getId(),
+                            "DEB",
+                            debtorAccount.getCodeInternalAccount());
+
+            totalDebtorTransactions = debtorTransactions.stream()
+                    .map(AccountTransaction::getAmount)
+                    .reduce(0.0f, Float::sum);
         }
 
         switch (accountTransactionRQ.getTransactionType()) {
@@ -60,6 +74,15 @@ public class AccountTransactionService {
                 if (debtorAccount != null) {
                     if ((debtorAccount.getAvailableBalance() - accountTransactionRQ.getAmount()) < 0) {
                         throw new RuntimeException("No tiene suficiente dinero para la operacion");
+                    }
+
+                    if (totalDebtorTransactions + accountTransactionRQ.getAmount() > debtorAccount
+                            .getMaxAmountTransactions()) {
+                        throw new RuntimeException("El monto total de transacciones excede el límite permitido");
+                    }
+
+                    if (!debtorAccount.getAllowTransactions()) {
+                        throw new RuntimeException("No tiene permitido realizar transacciones.");
                     }
                     // Save code international of debtor
                     debtorAccountInternationalCode = debtorAccount.getCodeInternationalAccount();
@@ -89,6 +112,15 @@ public class AccountTransactionService {
                 if ((debtorAccount.getAvailableBalance() - accountTransactionRQ.getAmount()) < 0) {
                     fixedBalance = true;
                 }
+
+                if (totalDebtorTransactions + accountTransactionRQ.getAmount() > debtorAccount
+                        .getMaxAmountTransactions()) {
+                    throw new RuntimeException("El monto total de transacciones excede el límite permitido");
+                }
+
+                if (!debtorAccount.getAllowTransactions()) {
+                    throw new RuntimeException("No tiene permitido realizar transacciones.");
+                }
                 // Save code international of debtor
                 debtorAccountInternationalCode = debtorAccount.getCodeInternationalAccount();
                 withdrawal(debtorAccount, accountTransactionRQ.getAmount(), fixedBalance);
@@ -105,6 +137,20 @@ public class AccountTransactionService {
                 throw new RuntimeException(
                         "Tipo de transaccion no válida: " + accountTransactionRQ.getTransactionType());
         }
+    }
+
+    public List<AccountTransactionRS> getTransactionsOfAccount(String accountInternalCode) {
+        Account account = accountRepository.findByCodeInternalAccount(accountInternalCode);
+
+        if (account == null) {
+            throw new RuntimeException("La cuenta no pudo ser encontrada");
+        }
+
+        List<AccountTransactionRS> transactionRSList = transformToAccountTransactionRS(
+                account.getAccountTransactions());
+
+        return transactionRSList;
+
     }
 
     private void deposit(Account account, Float amount) {
@@ -149,5 +195,30 @@ public class AccountTransactionService {
                 .build();
 
         return accountTransaction;
+    }
+
+    private List<AccountTransactionRS> transformToAccountTransactionRS(List<AccountTransaction> accountTransactions) {
+        List<AccountTransactionRS> accountTransactionListRS = new ArrayList<>();
+
+        for (AccountTransaction accountTransaction : accountTransactions) {
+            AccountTransactionRS accountTransactionRS = AccountTransactionRS.builder()
+                    .uniqueKey(accountTransaction.getUniqueKey())
+                    .transactionType(accountTransaction.getTransactionType())
+                    .creditorAccount(accountTransaction.getCreditorAccount())
+                    .debtorAccount(accountTransaction.getDebtorAccount())
+                    .amount(accountTransaction.getAmount())
+                    .reference(accountTransaction.getReference())
+                    .creationDate(accountTransaction.getCreationDate())
+                    .bookingDate(accountTransaction.getBookingDate())
+                    .valueDate(accountTransaction.getValueDate())
+                    .applyTax(accountTransaction.getApplyTax())
+                    .parentTransactionKey(accountTransaction.getParentTransactionKey())
+                    .state(accountTransaction.getState())
+                    .build();
+
+            accountTransactionListRS.add(accountTransactionRS);
+        }
+
+        return accountTransactionListRS;
     }
 }

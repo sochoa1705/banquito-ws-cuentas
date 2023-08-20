@@ -3,6 +3,7 @@ package ec.edu.espe.arquitectura.wscuentas.service.Account;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountInformationRS;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountRQ;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountUpdateRQ;
+import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountUpdateStateRQ;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountUpdateRS;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.ExternalRestModel.CodeSwiftRS;
 import ec.edu.espe.arquitectura.wscuentas.model.Account.Account;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -60,6 +62,7 @@ public class AccountService {
 
         switch (account.getState()) {
             case "ACT":
+                account.setState(account.getState());
                 break;
             case "SUS":
             case "BLO":
@@ -78,6 +81,32 @@ public class AccountService {
         accountRepository.save(account);
 
         return transformToAccountUpdateRS(account);
+    }
+
+    public void updateStateDependsClient(AccountUpdateStateRQ accountUpdateStateRQ) {
+        List<Account> accountsOfClient = accountRepository.findByAccountHolderCode(accountUpdateStateRQ.getAccountHolderCode());
+
+        if (accountsOfClient.isEmpty() ) {
+            return;
+        }
+
+        for (Account account : accountsOfClient) {
+            switch (accountUpdateStateRQ.getState()) {
+                case "ACT":
+                    account.setState("ACT");
+                    break;
+                case "SUS":
+                case "BLO":
+                case "INA":
+                    account.setBlockedBalance(account.getAvailableBalance());
+                    account.setState(accountUpdateStateRQ.getState());
+                    account.setClosedDate(new Date());
+                    break;
+                default:
+                    throw new RuntimeException("Estado no válido: " + accountUpdateStateRQ.getState());
+            }
+            accountRepository.save(account);
+        }
     }
 
     private Account transformOfAccountRQ(AccountRQ accountRQ) {
