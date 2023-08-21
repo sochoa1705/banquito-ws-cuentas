@@ -16,9 +16,9 @@ public class ClientRestService {
         String url;
 
         if (typeClient.equals("CUS")) {
-            url = "http://localhost:8081/api/v1/customers/informationforaccount/" + uniqueKey;
+            url = "https://banquito-ws-clientes-ntsumodxxq-uc.a.run.app/api/v1/customers/informationforaccount/" + uniqueKey;
         } else {
-            url = "http://localhost:8081/api/v1/group-company/informationforaccount/" + uniqueKey;
+            url = "https://banquito-ws-clientes-ntsumodxxq-uc.a.run.app/api/v1/group-company/informationforaccount/" + uniqueKey;
         }
 
         ResponseEntity<Object> response = restTemplate.getForEntity(url, Object.class);

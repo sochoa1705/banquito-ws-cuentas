@@ -13,7 +13,7 @@ public class ProductRestService {
     private final RestTemplate restTemplate;
 
     public String sendObtainNameProductRequest(String uniqueKey) {
-        String url = "http://localhost:8082/api/v1/product-account/name/" + uniqueKey;
+        String url = "https://banquito-ws-productos-pasivos-ntsumodxxq-uc.a.run.app/api/v1/product-account/name/" + uniqueKey;
 
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
 
