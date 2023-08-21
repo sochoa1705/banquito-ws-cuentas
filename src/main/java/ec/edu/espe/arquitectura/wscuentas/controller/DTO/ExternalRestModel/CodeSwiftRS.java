@@ -7,7 +7,6 @@ import lombok.Data;
 @Builder
 public class CodeSwiftRS {
 
-    private String branchCode;
     private String countryCode;
-
+    private String branchCode;
 }
