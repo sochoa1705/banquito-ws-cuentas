@@ -59,7 +59,7 @@ public class AccountController {
         }
     }
 
-    @PutMapping("/state")
+    @PostMapping("/state")
     public ResponseEntity<?> updateStateDependsClient(@RequestBody AccountUpdateStateRQ accountUpdateStateRQ) {
         try {
             accountService.updateStateDependsClient(accountUpdateStateRQ);

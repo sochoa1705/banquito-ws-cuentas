@@ -13,6 +13,9 @@ import ec.edu.espe.arquitectura.wscuentas.service.ExternalRestServices.ClientRes
 import ec.edu.espe.arquitectura.wscuentas.service.ExternalRestServices.ProductRestService;
 import lombok.RequiredArgsConstructor;
 
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
+
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -23,6 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AccountService {
 
+    // private static final Logger logger = LoggerFactory.getLogger(AccountService.class);
     private final AccountRepository accountRepository;
     private final ClientRestService clientRestService;
     private final ProductRestService productRestService;
@@ -86,7 +90,7 @@ public class AccountService {
     public void updateStateDependsClient(AccountUpdateStateRQ accountUpdateStateRQ) {
         List<Account> accountsOfClient = accountRepository.findByAccountHolderCode(accountUpdateStateRQ.getAccountHolderCode());
 
-        if (accountsOfClient.isEmpty() ) {
+        if (accountsOfClient.isEmpty()) {
             return;
         }
 
