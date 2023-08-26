@@ -39,8 +39,7 @@ public class AccountController {
     @PostMapping
     public ResponseEntity<?> create(@RequestBody AccountRQ newAccount) {
         try {
-            accountService.create(newAccount);
-            return ResponseEntity.ok().body("Cuenta creada");
+            return ResponseEntity.ok(accountService.create(newAccount));
         } catch (RuntimeException rte) {
             return ResponseEntity.badRequest().body(rte.getMessage());
         } catch (Exception e) {

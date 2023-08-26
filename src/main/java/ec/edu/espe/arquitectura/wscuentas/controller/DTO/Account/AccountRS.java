@@ -7,10 +7,10 @@ import lombok.Data;
 @Builder
 public class AccountRS {
 
-    private String branchId;
+    private String codeInternalAccount;
     private String accountHolderType;
-    private String accountHolderCode;
-    private String accountAlias;
+    private String state;
     private Boolean allowTransactions;
     private Float maxAmountTransactions;
+    private Float interestRate;
 }

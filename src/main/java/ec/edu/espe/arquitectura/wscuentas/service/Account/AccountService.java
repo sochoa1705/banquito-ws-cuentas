@@ -2,6 +2,7 @@ package ec.edu.espe.arquitectura.wscuentas.service.Account;
 
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountInformationRS;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountRQ;
+import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountRS;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountUpdateRQ;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountUpdateStateRQ;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountUpdateRS;
@@ -42,7 +43,7 @@ public class AccountService {
         return this.transformToAccountInformationRS(existsAccount);
     }
 
-    public void create(AccountRQ accountRQ) {
+    public AccountRS create(AccountRQ accountRQ) {
         // Transform AccountRQ to Account
         Account newAccount = transformOfAccountRQ(accountRQ);
 
@@ -54,6 +55,7 @@ public class AccountService {
             throw new RuntimeException("El usuario/compania ya tiene una cuenta de este tipo");
         } else {
             accountRepository.save(newAccount);
+            return this.transformToAccountRS(newAccount);
         }
     }
 
@@ -172,6 +174,19 @@ public class AccountService {
                 .build();
 
         return accountUpdateRS;
+    }
+
+    private AccountRS transformToAccountRS(Account account) {
+        AccountRS accountRS = AccountRS.builder()
+        .codeInternalAccount(account.getCodeInternalAccount())
+        .accountHolderType(account.getAccountHolderType())
+        .state(account.getState())
+        .allowTransactions(account.getAllowTransactions())
+        .maxAmountTransactions(account.getMaxAmountTransactions())
+        .interestRate(account.getInterestRate())
+        .build();
+
+        return accountRS;
     }
 
     private String generateNextAccountCode() {
