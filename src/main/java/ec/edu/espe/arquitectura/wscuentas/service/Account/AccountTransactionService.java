@@ -108,7 +108,6 @@ public class AccountTransactionService {
                         creditorAccountInternationalCode,
                         debtorAccountInternationalCode);
                 accountTransactionRepository.save(depositTransaction);
-                transactionUUID = debtorAccount != null ? withdrawalTransaction.getUniqueKey() : depositTransaction.getUniqueKey();
                 break;
             case "DEB":
                 if ((debtorAccount.getAvailableBalance() - accountTransactionRQ.getAmount()) < 0) {
@@ -134,11 +133,20 @@ public class AccountTransactionService {
                         creditorAccountInternationalCode,
                         debtorAccountInternationalCode);
                 accountTransactionRepository.save(withdrawalTransaction);
-                transactionUUID = withdrawalTransaction.getUniqueKey();
                 break;
             default:
                 throw new RuntimeException(
                         "Tipo de transaccion no válida: " + accountTransactionRQ.getTransactionType());
+        }
+
+        if (accountTransactionRQ.getTransactionType().equals("CRED")) {
+            if (debtorAccount != null) {
+                transactionUUID = withdrawalTransaction.getUniqueKey();
+            } else {
+                transactionUUID = depositTransaction.getUniqueKey();
+            }
+        } else {
+            transactionUUID = withdrawalTransaction.getUniqueKey();
         }
 
         return transactionUUID;
