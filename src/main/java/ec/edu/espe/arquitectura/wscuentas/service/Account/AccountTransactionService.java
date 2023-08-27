@@ -97,7 +97,6 @@ public class AccountTransactionService {
                             creditorAccountInternationalCode,
                             debtorAccountInternationalCode);
                     accountTransactionRepository.save(withdrawalTransaction);
-                    transactionUUID = withdrawalTransaction 
                 }
 
                 deposit(creditorAccount, accountTransactionRQ.getAmount());
