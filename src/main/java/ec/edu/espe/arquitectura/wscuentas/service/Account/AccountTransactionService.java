@@ -25,7 +25,7 @@ public class AccountTransactionService {
     private final AccountTransactionRepository accountTransactionRepository;
 
     @Transactional
-    public void create(AccountTransactionRQ accountTransactionRQ) {
+    public String create(AccountTransactionRQ accountTransactionRQ) {
 
         Account creditorAccount = null;
         Account debtorAccount = null;
@@ -33,6 +33,7 @@ public class AccountTransactionService {
         String creditorAccountInternationalCode = null;
         String debtorAccountInternationalCode = null;
         Float totalDebtorTransactions = 0.0f;
+        String transactionUUID = null;
 
         if (accountTransactionRQ.getCreditorAccount() != null) {
             creditorAccount = accountRepository.findByCodeInternalAccount(accountTransactionRQ.getCreditorAccount());
@@ -96,6 +97,7 @@ public class AccountTransactionService {
                             creditorAccountInternationalCode,
                             debtorAccountInternationalCode);
                     accountTransactionRepository.save(withdrawalTransaction);
+                    transactionUUID = withdrawalTransaction 
                 }
 
                 deposit(creditorAccount, accountTransactionRQ.getAmount());
@@ -107,6 +109,8 @@ public class AccountTransactionService {
                         creditorAccountInternationalCode,
                         debtorAccountInternationalCode);
                 accountTransactionRepository.save(depositTransaction);
+                transactionUUID = debtorAccount != null ? withdrawalTransaction.getUniqueKey() : depositTransaction.getUniqueKey();
+                return transactionUUID;
                 break;
             case "DEB":
                 if ((debtorAccount.getAvailableBalance() - accountTransactionRQ.getAmount()) < 0) {
@@ -132,6 +136,7 @@ public class AccountTransactionService {
                         creditorAccountInternationalCode,
                         debtorAccountInternationalCode);
                 accountTransactionRepository.save(withdrawalTransaction);
+                return withdrawalTransaction.getUniqueKey();
                 break;
             default:
                 throw new RuntimeException(

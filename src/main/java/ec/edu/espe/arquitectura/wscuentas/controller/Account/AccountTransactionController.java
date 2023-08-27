@@ -25,8 +25,7 @@ public class AccountTransactionController {
     @PostMapping
     public ResponseEntity<?> create(@RequestBody AccountTransactionRQ accountTransactionRQ) {
         try {
-            accountTransactionService.create(accountTransactionRQ);
-            return ResponseEntity.ok().body("Transaccion realizada");
+            return ResponseEntity.ok(accountTransactionService.create(accountTransactionRQ));
         } catch (RuntimeException rte) {
             return ResponseEntity.badRequest().body(rte.getMessage());
         } catch (Exception e) {
