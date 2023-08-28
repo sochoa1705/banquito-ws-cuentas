@@ -33,7 +33,10 @@ public class AccountTransactionService {
         String creditorAccountInternationalCode = null;
         String debtorAccountInternationalCode = null;
         Float totalDebtorTransactions = 0.0f;
-        String transactionUUID = null;
+        String transactionCredWithdrawal = null;
+        String transactionCredDeposit = null;
+        String transactionDebWithdrawal = null;
+        String transactionUUID;
 
         if (accountTransactionRQ.getCreditorAccount() != null) {
             creditorAccount = accountRepository.findByCodeInternalAccount(accountTransactionRQ.getCreditorAccount());
@@ -97,6 +100,7 @@ public class AccountTransactionService {
                             creditorAccountInternationalCode,
                             debtorAccountInternationalCode);
                     accountTransactionRepository.save(withdrawalTransaction);
+                    transactionCredWithdrawal = withdrawalTransaction.getUniqueKey();
                 }
 
                 deposit(creditorAccount, accountTransactionRQ.getAmount());
@@ -108,6 +112,7 @@ public class AccountTransactionService {
                         creditorAccountInternationalCode,
                         debtorAccountInternationalCode);
                 accountTransactionRepository.save(depositTransaction);
+                transactionCredDeposit = depositTransaction.getUniqueKey();
                 break;
             case "DEB":
                 if ((debtorAccount.getAvailableBalance() - accountTransactionRQ.getAmount()) < 0) {
@@ -133,20 +138,20 @@ public class AccountTransactionService {
                         creditorAccountInternationalCode,
                         debtorAccountInternationalCode);
                 accountTransactionRepository.save(withdrawalTransaction);
+                transactionDebWithdrawal = withdrawalTransaction.getUniqueKey();
                 break;
             default:
                 throw new RuntimeException(
                         "Tipo de transaccion no válida: " + accountTransactionRQ.getTransactionType());
         }
 
-        if (accountTransactionRQ.getTransactionType().equals("CRED")) {
-            if (debtorAccount != null) {
-                transactionUUID = withdrawalTransaction.getUniqueKey();
-            } else {
-                transactionUUID = depositTransaction.getUniqueKey();
+        if (transactionCredDeposit != null) {
+            if (transactionCredWithdrawal != null) {
+                transactionUUID = transactionCredWithdrawal;
             }
+            transactionUUID = transactionCredDeposit;
         } else {
-            transactionUUID = withdrawalTransaction.getUniqueKey();
+            transactionUUID = transactionDebWithdrawal;
         }
 
         return transactionUUID;
