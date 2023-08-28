@@ -3,8 +3,10 @@ package ec.edu.espe.arquitectura.wscuentas.service.Account;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountInformationRS;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountRQ;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountRS;
+import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountTransactionRS;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountUpdateRQ;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountUpdateStateRQ;
+import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountsUserRS;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.Account.AccountUpdateRS;
 import ec.edu.espe.arquitectura.wscuentas.controller.DTO.ExternalRestModel.CodeSwiftRS;
 import ec.edu.espe.arquitectura.wscuentas.model.Account.Account;
@@ -19,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -32,6 +35,22 @@ public class AccountService {
     private final ClientRestService clientRestService;
     private final ProductRestService productRestService;
     private final BranchRestService branchRestService;
+
+    public List<AccountsUserRS> getAccountsOfUser(String accountHolderCode) {
+        List<Account> existsAccounts = accountRepository.findByAccountHolderCode(accountHolderCode);
+
+        if (existsAccounts == null) {
+            throw new RuntimeException("No tiene cuentas el usuario");
+        }
+
+        List<AccountsUserRS> accounts = new ArrayList<>();
+
+        for (Account account : existsAccounts) {
+            accounts.add(transformToAccountsUserRS(account));
+        }
+
+        return accounts;
+    }
 
     public AccountInformationRS getAccountInformation(String codeInternalAccount) {
         Account existsAccount = accountRepository.findByCodeInternalAccount(codeInternalAccount);
@@ -187,6 +206,16 @@ public class AccountService {
         .build();
 
         return accountRS;
+    }
+
+    private AccountsUserRS transformToAccountsUserRS(Account account) {
+        AccountsUserRS accountsUserRS = AccountsUserRS.builder()
+        .codeInternalAccount(account.getCodeInternalAccount())
+        .totalBalance(account.getTotalBalance())
+        .accountAlias(account.getName())
+        .build();
+
+        return accountsUserRS;
     }
 
     private String generateNextAccountCode() {

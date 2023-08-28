@@ -25,6 +25,17 @@ public class AccountController {
 
     private final AccountService accountService;
 
+    @GetMapping("/user/{uniqueKey}")
+    public ResponseEntity<?> getAccountsOfUser(@PathVariable String uniqueKey) {
+        try {
+            return ResponseEntity.ok(accountService.getAccountsOfUser(uniqueKey));
+        } catch (RuntimeException rte) {
+            return ResponseEntity.badRequest().body(rte.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/information/{codeInternalAccount}")
     public ResponseEntity<?> getAccountInformation(@PathVariable String codeInternalAccount) {
         try {
